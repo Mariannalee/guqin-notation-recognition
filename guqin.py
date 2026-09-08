@@ -163,7 +163,7 @@ def predict(model_path: Path, image_path: Path) -> None:  # 定義載入模型�
 
 
 def build_parser() -> argparse.ArgumentParser:  # 定義建立命令列介面的函式。
-    parser = argparse.ArgumentParser(description="用 Excel 內的古琴圖片訓練模型，並辨識新圖片的 String 與 hui。")  # 建立主命令列解析器及說明。
+    parser = argparse.ArgumentParser(description="用 Excel 內的古琴圖片訓練模型，並辨識新圖片的各個標籤欄位。")  # 建立主命令列解析器及說明。
     subparsers = parser.add_subparsers(dest="command", required=True)  # 建立必填的訓練或預測子命令。
     train_parser = subparsers.add_parser("train", help="從 Excel 圖片及旁邊欄位訓練模型。")  # 建立訓練子命令。
     train_parser.add_argument("--excel", type=Path, default=Path("古琴資料.xlsx"), help="訓練資料 Excel 路徑。")  # 加入可省略且預設為現有檔案的 Excel 參數。

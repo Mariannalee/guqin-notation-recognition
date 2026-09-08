@@ -1,2 +1,2 @@
-*.joblib binary
+*.joblib filter=lfs diff=lfs merge=lfs -text
 *.png binary

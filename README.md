@@ -1,13 +1,14 @@
 # 古琴減字譜影像辨識模型
 
-這個專案用來辨識古琴減字譜的單字圖片。輸入一張已裁切的譜字影像後，模型會分別預測：
+這個專案用來辨識古琴減字譜的單字圖片。輸入一張已裁切的譜字影像後，目前模型會分別預測：
 
-- `String`：弦序相關標籤
-- `hui`：徽位相關標籤
+- `String1`、`String2`：兩組弦序相關標籤
+- `Hui1`、`Hui2`：兩組徽位相關標籤
+- `Other`：其他指法或無法歸入前述欄位的標籤
 
 每個結果都會同時輸出模型信心值。專案內附已訓練模型 `guqin_model.joblib`，可直接進行推論，也可以用自己的已標註資料重新訓練。
 
-> 目前模型使用 211 筆樣本訓練。模型檔未保存有效的交叉驗證準確率（`String`、`hui` 均為 `null`），因此信心值不應視為實際準確率；建議增加各類別樣本並建立獨立測試集後再用於正式研究。
+> 目前模型使用 510 筆五欄完整標註訓練。`String1` 的五折交叉驗證準確率約為 54.9%；其他欄位因至少有一個類別不足兩筆，未產生有效交叉驗證分數。模型的信心值不等於獨立測試集上的實際準確率，建議補足稀少類別並另建測試集後再用於正式研究。
 
 ## 輸入圖片範例
 
@@ -24,7 +25,7 @@
 1. 依 EXIF 方向校正並轉成灰階。
 2. 自動調整對比，縮放並裁成 64 × 64。
 3. 擷取 16 × 16 縮圖像素，以及以 8 × 8 區塊統計的 9 方向梯度特徵（類 HOG）。
-4. 分別交給兩個 `ExtraTreesClassifier`，預測 `String` 與 `hui`。
+4. 每個標籤欄位各交給一個 `ExtraTreesClassifier`，預測 `String1`、`String2`、`Hui1`、`Hui2` 與 `Other`。
 5. 以 JSON 輸出各欄位的預測值與最高分類機率。
 
 訓練時，每個輸出欄位各使用一個 500 棵樹的 Extra Trees 分類器，固定亂數種子為 42，並使用所有 CPU 核心。若各類別樣本數足夠，程式會自動執行最多五折交叉驗證。
@@ -38,8 +39,6 @@
 | Pillow | 開啟、校正、灰階化與縮放圖片 |
 | scikit-learn | Extra Trees 分類器與交叉驗證 |
 | joblib | 儲存與載入訓練完成的模型 |
-| OpenCV | PDF 前處理工具所需（核心推論不直接使用） |
-| PyMuPDF | PDF 前處理工具所需（核心推論不直接使用） |
 
 ## 安裝
 
@@ -73,8 +72,11 @@ python guqin.py predict data1.png --model guqin_model.joblib
 {
   "image": "data1.png",
   "prediction": {
-    "String": { "value": "預測標籤", "confidence": 0.95 },
-    "hui": { "value": "預測標籤", "confidence": 0.90 }
+    "String1": { "value": "預測標籤", "confidence": 0.95 },
+    "String2": { "value": "預測標籤", "confidence": 0.90 },
+    "Hui1": { "value": "預測標籤", "confidence": 0.92 },
+    "Hui2": { "value": "預測標籤", "confidence": 0.88 },
+    "Other": { "value": "預測標籤", "confidence": 0.85 }
   }
 }
 ```
@@ -95,9 +97,9 @@ dataset/images/
 `labels.csv` 至少要有以下欄位：
 
 ```csv
-image,string,hui
-sample_001.png,1,7
-sample_002.png,2,8
+image,String1,String2,Hui1,Hui2,Other
+sample_001.png,1,3,7,8,Nondefine
+sample_002.png,2,4,8,9,Nondefine
 ```
 
 執行：
@@ -120,6 +122,7 @@ python guqin.py train --excel 古琴資料.xlsx --model guqin_model.joblib
 
 - `guqin.py`：影像特徵、Excel 訓練、模型載入與單張圖片辨識。
 - `guqin_csv.py`：用圖片資料夾及 `labels.csv` 重新訓練。
+- `guqin_labeler.py`：以圖形介面逐張填寫五個模型標籤並產生 `labels.csv`。
 - `guqin_model.joblib`：目前已訓練完成的模型。
 - `requirements.txt`：Python 套件版本需求。
 - `data1.png`～`data3.png`：README 使用的少量輸入範例。

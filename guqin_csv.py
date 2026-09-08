@@ -20,24 +20,26 @@ def load_csv_samples(folder: Path) -> tuple[list[Path], list[dict[str, str]], li
     rows: list[dict[str, str]] = []  # 建立存放每張圖片答案的清單。
     with csv_path.open("r", encoding="utf-8-sig", newline="") as csv_file:  # 用相容 Excel 的 UTF-8 編碼開啟標籤檔。
         reader = csv.DictReader(csv_file)  # 將 CSV 每一列轉成以欄位名稱索引的字典。
-        required = {"image", "string", "hui"}  # 定義訓練需要的三個必要欄位。
-        if not required.issubset(set(reader.fieldnames or [])):  # 檢查 CSV 標題是否完整。
-            raise ValueError("labels.csv 必須包含 image、string、hui 三個欄位。")  # 缺少欄位時停止並提示正確格式。
+        fieldnames = reader.fieldnames or []  # 取得 CSV 內實際存在的欄位名稱。
+        if "image" not in fieldnames:  # 檢查 CSV 是否有圖片路徑欄位。
+            raise ValueError("labels.csv 必須包含 image 欄位。")  # 缺少圖片欄時停止並提示正確格式。
+        headers = [field for field in fieldnames if field != "image"]  # 將 image 以外的欄位全部視為預測目標。
+        if not headers:  # 檢查是否完全沒有可訓練的標籤欄位。
+            raise ValueError("labels.csv 必須至少包含一個標籤欄位。")  # 提醒使用者補上模型輸出欄位。
         for line_number, row in enumerate(reader, start=2):  # 從 CSV 第二列開始逐筆檢查標註資料。
             image_name = str(row.get("image", "")).strip()  # 取得並清理圖片檔名。
-            string_answer = str(row.get("string", "")).strip()  # 取得並清理 String 答案。
-            hui_answer = str(row.get("hui", "")).strip()  # 取得並清理 hui 答案。
-            if not image_name or not string_answer or not hui_answer:  # 檢查這筆資料是否尚未完成標註。
+            answers = {header: str(row.get(header, "")).strip() for header in headers}  # 取得並清理所有標籤答案。
+            if not image_name or any(not answer for answer in answers.values()):  # 檢查這筆資料是否尚未完成標註。
                 continue  # 自動略過未完成的圖片，讓使用者能先用已完成部分訓練。
             image_path = folder / image_name  # 將 CSV 圖片檔名組合成完整路徑。
             if not image_path.is_file() or image_path.suffix.lower() not in IMAGE_SUFFIXES:  # 檢查圖片是否存在且格式受到支援。
                 print(f"警告：略過第 {line_number} 列，找不到圖片 {image_name}")  # 顯示被略過資料的列號與圖片名稱。
                 continue  # 略過無法讀取的圖片而繼續檢查其他資料。
             image_files.append(image_path)  # 將有效圖片加入訓練路徑清單。
-            rows.append({"String": string_answer, "hui": hui_answer})  # 將答案轉成與 Excel 模型相同的欄位格式。
+            rows.append(answers)  # 保留 CSV 內的欄名與答案供各欄位分別訓練。
     if not image_files:  # 檢查是否沒有任何完整且有效的標註資料。
         raise ValueError("labels.csv 內沒有可供訓練的完整資料。")  # 提醒使用者先完成至少一筆標註。
-    return image_files, rows, ["String", "hui"]  # 回傳圖片、答案與模型輸出欄位名稱。
+    return image_files, rows, headers  # 回傳圖片、答案與模型輸出欄位名稱。
 
 
 def train_csv(folder: Path, model_path: Path) -> None:  # 定義使用圖片資料夾及 CSV 訓練模型的主要函式。
