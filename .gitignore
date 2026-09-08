@@ -1,0 +1,31 @@
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Original/private training material
+dataset/
+*.xlsx
+*.xls
+*.pdf
+
+# Generated PDF crops and previews
+pdf_crops/
+pdf_crops_*/
+_pdf_preview/
+
+# Labeling state and generated metadata
+.guqin_labeler_state.json
+labels.csv
+manifest.csv
+
+# Temporary files
+*.tmp
+*.log
