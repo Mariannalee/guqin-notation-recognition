@@ -126,9 +126,3 @@ python guqin.py train --excel 古琴資料.xlsx --model guqin_model.joblib
 - `guqin_model.joblib`：目前已訓練完成的模型。
 - `requirements.txt`：Python 套件版本需求。
 - `data1.png`～`data3.png`：README 使用的少量輸入範例。
-
-## 注意事項
-
-- `joblib` 模型使用 Python pickle 機制，請勿載入來源不明的模型檔。
-- 本模型只適合與訓練資料風格相近、已裁切的古琴減字譜影像。
-- 原始 PDF、Excel、完整訓練集、裁切結果與虛擬環境皆由 `.gitignore` 排除。
